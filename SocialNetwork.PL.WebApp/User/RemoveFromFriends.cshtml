@@ -1,0 +1,55 @@
+﻿@using SocialNetwork.PL.WebApp
+@using SocialNetwork.Entities
+@{ 
+    User curUser = null;
+
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    if (User.IsInRole("admin"))
+    {
+        Common.Log.Error("Location: /User/RemoveFromFriends, Message: admins don't have access to this location");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    if (IsPost)
+    {
+        try
+        {
+            curUser = Common.UserLogic.GetUserByName(User.Identity.Name);
+
+            if (curUser == null)
+            {
+                Common.Log.Error("Location: /User/RemoveFromFriends Message: Current user was not found");
+                Response.Redirect("~Error/Error404");
+            }
+
+            if (!Request["friendId"].IsInt())
+            {
+                Common.Log.Error($"Location: /User/RemoveFromFriends Message: Request to remove a friend has invalid friend's id format ({Request["friendId"]})");
+                Response.Redirect("~/Error/Error400");
+            }
+
+            if (!Common.UserLogic.RemoveFriendFromUser(curUser.Id,
+                                                    int.Parse(Request["friendId"])))
+            {
+                Common.Log.Error("Location: /User/RemoveFromFriends Message: Cannot remove a user from friends (not found)");
+                Response.Redirect("~/Error/Error400");
+            }
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Site: /User/RemoveFromFriends Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+
+        Response.Redirect("~/User");
+    }
+    else
+    {
+        Common.Log.Error("Location: /User/RemoveFromFriends Message: Cannot use 'POST' to send a request for this location");
+        Response.Redirect("~/Error/Error400");
+    }
+}

@@ -1,0 +1,111 @@
+﻿@using SocialNetwork.PL.WebApp
+@using SocialNetwork.Entities;
+
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    if (User.IsInRole("admin"))
+    {
+        Response.Redirect("~/Error/Error400");
+    }
+
+    Layout = "~/_Layouts/_DefaultLayout.cshtml";
+    User user = null;
+    IEnumerable<Dialog> dialogs = null;
+    try
+    {
+        user = Common.UserLogic.GetUserByName(User.Identity.Name);
+        dialogs = Common.UserMessagesLogic.
+                                  GetUserDialogs(user.Id);
+    }
+    catch (Exception e)
+    {
+        Common.Log.Fatal($"Site: /User/Messages Message: {e.Message} {e.StackTrace}");
+        Response.Redirect("~/Error/Error500");
+    }
+    Page.Title = "Messages";
+}
+
+@section Scripts{
+    <script src="~/scripts/messages.js"></script>
+}
+
+@section Styles{
+    <link rel="stylesheet" href="~/Content/messages.css" />
+}
+@{
+            <div class="col-xs-8">
+                <ul id="Tabs" class="nav nav-tabs">
+                    <li class="active btn btn-link" data-toggle="tab" data-target="#DialogsList">All messages</li>
+                </ul>
+                <div class="tab-content" id="TabsContent">
+                    <ul id="DialogsList" class="tab-pane fade in active" >
+                        @foreach (var dialog in dialogs)
+                        {
+                            <li class="list-group-item dialogElement">
+                                <a href="~/User?userId=@dialog.SecondPerson.Id">
+                                    <img class="img-circle"
+                                         src="@(dialog.SecondPerson.Image ?? "/User/_Images/no_pic.png")"
+                                         alt="No image"
+                                         width="50"
+                                         height="40" />
+                                </a>
+                                <span class="text-capitalize text-info ">
+                                    @dialog.SecondPerson.FirstName @dialog.SecondPerson.LastName
+                                </span>
+                                <input type="hidden" value="@dialog.SecondPerson.Id" />
+                                <p class="text-right">@dialog.Messages.Last().Contents</p>
+                            </li>
+                        }
+                    </ul>
+                        @foreach (var dialog in dialogs)
+                        {
+                            <div class="tab-pane fade" id="@dialog.SecondPerson.Id">
+                                <ul class="dialog" id="@dialog.SecondPerson.Id">
+                                    @foreach (var message in dialog.Messages)
+                                {
+                                    if (message.SenderId == dialog.FirstPerson.Id)
+                                    {
+                                <li class="list-group-item">
+                                    <p>
+                                        <img src="@(dialog.FirstPerson.Image ?? "/User/_Images/no_pic.png")"
+                                             class="img-circle img-thumbnail img-responsive"
+                                             width="50"
+                                             height="40" />
+                                        <label class="label label-info">
+                                            @message.DateSent.ToShortDateString()
+                                        </label>
+                                        @message.Contents
+                                    </p>
+                                </li>
+                                    }
+                                    else
+                                    {
+                                <li class="list-group-item text-right">
+                                    <p>
+                                        <label class="label label-info">@message.DateSent.ToShortDateString()</label>
+                                        @message.Contents
+                                        <img src="@((message.SenderId == dialog.FirstPerson.Id ? dialog.FirstPerson.Image : dialog.SecondPerson.Image) ?? "/User/_Images/no_pic.png")"
+                                             class="img-circle img-thumbnail img-responsive"
+                                             width="50"
+                                             height="40" />
+                                    </p>
+                                </li>
+                                    }
+                                }
+                                </ul>
+                                <div class="form-group sendForm pull-right">
+                                        <input type="text" class="form-control input-lg" name="message" />
+                                        <input type="hidden"
+                                               name="recieverId"
+                                               value="@dialog.SecondPerson.Id" />
+                                        <button class="btn btn-default pull-right">Send message</button>
+                                </div>
+                            </div>
+                        }
+                </div>
+            </div>
+}

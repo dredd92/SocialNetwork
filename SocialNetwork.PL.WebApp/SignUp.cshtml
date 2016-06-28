@@ -1,0 +1,108 @@
+﻿@using SocialNetwork.PL.WebApp;
+@using SocialNetwork.Entities;
+
+@{
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("admin"))
+        {
+            Response.Redirect("~/Admin");
+        }
+        else
+        {
+            Response.Redirect("~/User");
+        }
+    }
+
+
+
+    Layout = "~/_Layouts/_DefaultLayout.cshtml";
+    Page.Title = "Sign up";
+    Validation.RequireFields("username", "password", "repeatPassword", "firstName", "lastName");
+    Validation.Add("firstName", Validator.Regex(@"^(?!\s*$).+", "First name cannot be empty"));
+    Validation.Add("lastName", Validator.Regex(@"^(?!\s*$).+", "First name cannot be empty"));
+    string warningMessage = null;
+    Page.Location = "Sign up";
+
+    if (IsPost)
+    {
+        if (Validation.IsValid())
+        {
+            if (Request["password"] != Request["repeatPassword"])
+            {
+                warningMessage = "Passwords do not match";
+            }
+            else
+            {
+                try
+                {
+                    var theSameUser = Common.UserLogic.GetUserByName(Request["username"]);
+                    if (theSameUser == null)
+                    {
+                        Common.UserLogic.AddUser(new SocialNetwork.Entities.User
+                        {
+                            Username = Request["username"],
+                            Password = Crypto.HashPassword(Request["password"]),
+                            FirstName = Request["firstName"],
+                            LastName = Request["lastName"],
+                            Sex = (Sex)int.Parse(Request["sex"]),
+                        });
+
+                        FormsAuthentication.SetAuthCookie(Request["username"], false);
+
+                        Response.Redirect("~/User");
+                    }
+                    else
+                    {
+                        warningMessage = "User with the same name already exists";
+                    }
+                }
+                catch (Exception e)
+                {
+                    Common.Log.Fatal($"Site: SignUp, Message: {e.Message} {e.StackTrace}");
+                    Response.Redirect("~/Error/Error500");
+                }
+            }
+        }
+    }
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-5">
+            @Html.ValidationSummary()
+            @if (warningMessage != null)
+            {
+                <p class="alert alert-danger">@warningMessage</p>
+            }
+            <form class="form-group" method="post">
+                <fieldset>
+                    <label class="label label-default">Username</label>
+                    <input class="form-control" name="username" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Password</label>
+                    <input class="form-control" name="password" type="password" />
+                    <label class="label label-default">Repeat password</label>
+                    <input class="form-control" name="repeatPassword" type="password" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">First name</label>
+                    <input class="form-control" name="firstName" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Last name</label>
+                    <input class="form-control" name="lastName" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Sex</label>
+                    <select class="form-control" name="sex">
+                        <option name="sex" value="0">Male</option>
+                        <option name="sex" value="1">Female</option>
+                    </select>
+                </fieldset>
+                <button class="btn">Sign up</button>
+            </form>
+        </div>
+    </div>
+</div>

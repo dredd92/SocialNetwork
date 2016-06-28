@@ -1,0 +1,8 @@
+﻿@{ 
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~/Admin/LogIn");
+    }
+
+    Response.Redirect("~/User/Search");
+}

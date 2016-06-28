@@ -1,0 +1,171 @@
+﻿@using SocialNetwork.PL.WebApp
+@using SocialNetwork.Entities;
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    var isAdmin = User.IsInRole("admin");
+
+    Layout = isAdmin ? "~/_Layouts/_AdminLayout.cshtml" :
+        "~/_Layouts/_DefaultLayout.cshtml";
+
+    User user = null;
+}
+
+@{
+    if (!isAdmin)
+    {
+        try
+        {
+            user = Common.UserLogic.GetUserByName(User.Identity.Name);
+
+            if (user == null)
+            {
+                FormsAuthentication.SignOut();
+                Common.Log.Error("Location: /User/Index Message: User was deleted during the session");
+                Response.Redirect("~/Error/Error404");
+            }
+
+            user.Friends = Common.UserLogic.GetUserFriends(user);
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Location: /User/Index Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+    }
+}
+
+@if (IsPost)
+{
+    Common.Log.Error("Location: /User/Index Message: Cannot use 'POST' to send a request for this location");
+    Response.Redirect("~/Error/Error400");
+}
+
+@if (!Request["userId"].IsEmpty() && !Request["userId"].IsInt())
+{
+    Common.Log.Error($"Location: /User/Index Message: User with Id {Request["userId"]} was not found");
+    Response.Redirect("~/Error/Error400");
+}
+
+@if (!Request["userId"].IsEmpty() && int.Parse(Request["userId"]) != user?.Id)
+{
+    User secondUser = null;
+    try
+    {
+        secondUser = Common.UserLogic.GetUserById(int.Parse(Request["userId"]));
+    }
+    catch (Exception e)
+    {
+        Common.Log.Error($"Location: /User/Index Message: {e.Message} {e.StackTrace}");
+        Response.Redirect("~/Error/Error500");
+    }
+
+    bool friend = false;
+
+    if (!isAdmin)
+    {
+        if (user.Friends.Any(x => x.Id == secondUser.Id))
+        {
+            friend = true;
+        }
+    }
+
+    Page.Title = $"{secondUser.FirstName} {secondUser.LastName}";
+        <div class="col-xs-2">
+            <img src=@(secondUser.Image ?? "/User/_Images/no_pic.png") class="img-thumbnail img-responsive" alt="no image" width="320" height="240" />
+            @if (!isAdmin)
+            {
+                <button data-toggle="modal" data-target="#MessageWindow" class="btn btn-link">Send message</button>
+                <div class="modal fade" id="MessageWindow" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dissmiss="modal" data-target="#MessageWindow">&times</button>
+                                <h4 class="modal-title">Message</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form class="form-group" method="post" action="~/User/SendMessage.cshtml">
+                                    <input name="text" class="form-control" type="text" />
+                                    <input type="hidden" value="@secondUser.Id" name="receiverId" />
+                                    <button class="btn btn-default">Send message</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                if (friend)
+                {
+                    <form method="post" action="~/User/RemoveFromFriends">
+                        <input type="hidden" value="@secondUser.Id" name="friendId" />
+                        <button class="btn btn-link">Remove from friends</button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" action="~/User/AddToFriends">
+                        <input type="hidden" value="@secondUser.Id" name="friendId" />
+                        <input type="hidden" value="@user.Id" name="userId" />
+                        <button class="btn btn-link">Add to friends</button>
+                    </form>
+                }
+            }
+            else
+            {
+                <ul class="list-unstyled">
+                    <li>
+                        <form method="post" action="~/User/DeleteProfile">
+                            <input type="hidden" value="@secondUser.Id" name="userToRemove" />
+                            <button class="btn btn-link">Delete profile</button>
+                        </form>
+                    </li>
+                    <li>
+                        <form method="get" action="~/User/EditProfile">
+                            <input type="hidden" value="@secondUser.Id" name="userToEdit" />
+                            <button class="btn btn-link">Edit profile</button>
+                        </form>
+                    </li>
+                </ul>
+            }
+            </div>
+            <div class="col-xs-6">
+                <h1 class="text-right">@secondUser.FirstName @secondUser.LastName</h1>
+                <ul class="list-unstyled">
+                    <li>
+                        <label class="label label-info">Birthday:</label> @(secondUser.DateOfBirth.HasValue ? secondUser.DateOfBirth.Value.ToShortDateString() : "not specified")
+                    </li>
+                    <li>
+                        <label class="label label-info">Hometown:</label> @(secondUser.Hometown ?? "not specified")
+                    </li>
+                </ul>
+            </div>
+}
+else
+{
+    if (!isAdmin)
+    {
+        Page.Title = $"{user.FirstName} {user.LastName}";
+            <div class="col-xs-2">
+                <img src=@(user.Image ?? "/User/_Images/no_pic.png") class="img-thumbnail img-responsive" alt="no image" width="320" height="240" />
+                <a href="~/User/EditProfile">Edit Profile</a>
+            </div>
+            <div class="col-xs-6">
+                <h1>@user.FirstName @user.LastName</h1>
+                <ul class="list-unstyled">
+                    <li>
+                        <label class="label label-info">Birthday:</label> @(user.DateOfBirth.HasValue ? user.DateOfBirth.Value.ToShortDateString() : "not specified")
+                    </li>
+                    <li>
+                        <label class="label label-info">Hometown:</label> @(user.Hometown ?? "not specified")
+                    </li>
+                </ul>
+            </div>
+    }
+    else
+    {
+        Response.Redirect("~/Admin");
+    }
+}

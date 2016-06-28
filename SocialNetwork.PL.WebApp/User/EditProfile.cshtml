@@ -1,0 +1,155 @@
+﻿@using SocialNetwork.PL.WebApp;
+@using SocialNetwork.Entities;
+
+@{ 
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    var isAdmin = User.IsInRole("admin");
+    Layout = isAdmin ? "~/_Layouts/_AdminLayout.cshtml" : "~/_Layouts/_DefaultLayout.cshtml";
+    Page.Title = "Edit profile";
+    string warningMessage = null;
+    var minDate = DateTime.Now.AddYears(-140);
+    User user = null;
+
+    if (isAdmin)
+    {
+        if (!Request["userToEdit"].IsInt())
+        {
+            Common.Log.Error($"Location: /User/EditProfile Message: User Id was not in the correct format ({Request["userToEdit"]})");
+            Response.Redirect("~/Error/Error403");
+        }
+        try
+        {
+            user = Common.UserLogic.GetUserById(int.Parse(Request["userToEdit"]));
+
+            if (user == null)
+            {
+                Common.Log.Error("Location: /User/EditProfile Message: User was deleted during the session or wrongly requested ");
+                Response.Redirect("~/Error/Error404");
+            }
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Location: /User/EditProfile Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+    }
+    else
+    {
+        try
+        {
+            user = Common.UserLogic.GetUserByName(User.Identity.Name);
+
+            if (user == null)
+            {
+                Common.Log.Error("Location: /User/Friends Message: User was deleted during the duration of a session");
+                Response.Redirect("~/Error/Error404");
+            }
+        }
+        catch
+        {
+            Common.Log.Fatal($"Location: /User/EditProfile Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+    }
+
+    var dateOfBirth = user.DateOfBirth == null ? "" : user.DateOfBirth.Value.ToString("yyyy-MM-dd");
+}
+
+@if (IsPost)
+{
+    var image = WebImage.GetImageFromRequest(Request["profileImage"]);
+    string savePath = null;
+    if (image != null)
+    {
+        var name = $"{Guid.NewGuid()}_{Path.GetFileName(image.FileName)}";
+        savePath = $"_Images/{name}";
+        try
+        {
+            image.Save(savePath);
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Location: /User/EditProfile Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+
+        savePath = $"/User/_Images/{name}";
+    }
+
+    var newDateOfBirth = new DateTime();
+    var isDateCorrect = DateTime.TryParse(Request["dateOfBirth"], out newDateOfBirth);
+    var firstName = Request["firstName"].IsEmpty() ? user.FirstName : Request["firstName"];
+    var lastName = Request["lastName"].IsEmpty() ? user.LastName : Request["lastName"];
+    var sex = Request["sex"].IsEmpty() ? user.Sex : (Sex)(int.Parse(Request["sex"]));
+    var hometown = Request["hometown"].IsEmpty() ? user.Hometown : Request["hometown"];
+    var newUser = new User
+    {
+        FirstName = firstName,
+        LastName = lastName,
+        Sex = sex,
+        DateOfBirth = isDateCorrect ? newDateOfBirth : user.DateOfBirth,
+        Username = user.Username,
+        Hometown = hometown,
+        Friends = user.Friends,
+        Id = user.Id,
+        Image = savePath ?? user.Image,
+        Password = user.Password,
+    };
+
+    try
+    {
+        Common.UserLogic.UpdateUser(user.Id, newUser);
+    }
+    catch (Exception e)
+    {
+        Common.Log.Fatal($"Location: /User/EditProfile Message: {e.Message} {e.StackTrace}");
+        Response.Redirect("~/Error/Error500");
+    }
+
+    Response.Redirect("~");
+}
+
+    <div class="col-xs-5">
+            @Html.ValidationSummary()
+            @if (warningMessage != null)
+            {
+                <p class="alert alert-danger">@warningMessage</p>
+            }
+            <h1>Edit Profile Info</h1>
+            <form class="form-group" method="post" enctype="multipart/form-data">
+                <fieldset>
+                    <label class="label label-default">First name</label>
+                    <input class="form-control" name="firstName" placeholder="@user.FirstName" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Last name</label>
+                    <input class="form-control" name="lastName" placeholder="@user.LastName" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Sex</label>
+                    <select class="form-control" name="sex">
+                        <option name="sex"></option>
+                        <option name="sex" value="0">Male</option>
+                        <option name="sex" value="1">Female</option>
+                    </select>
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Date of birth</label>
+                    <input class="form-control" type="date" name="dateOfBirth" max="@DateTime.Now.ToString("yyyy-MM-dd")" min="@minDate.ToString("yyyy-MM-dd")" value="@dateOfBirth" />
+                </fieldset>
+                <fieldset>
+                    <label class="label label-default">Hometown</label>
+                    <input class="form-control" type="text" name="hometown" />
+                </fieldset>
+                <fieldset>
+                    <label>Profile image</label>
+                    <input class="form-control" type="file" accept="image/*" name="profileImage"/>
+                </fieldset>
+
+                <button class="btn">Edit profile</button>
+            </form>
+        </div>

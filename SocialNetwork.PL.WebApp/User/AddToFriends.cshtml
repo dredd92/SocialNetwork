@@ -1,0 +1,48 @@
+﻿@using SocialNetwork.PL.WebApp
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+    if (User.IsInRole("admin"))
+    {
+        Common.Log.Error("Location: /User/AddToFriends Message: Admins cannot access this location");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    if (IsPost)
+    {
+        if (!Request["userId"].IsInt() || !Request["userId"].IsInt())
+        {
+            Common.Log.Error($"Location: /User/AddToFriends Message: Wrong format of userId ({Request["userId"]})");
+            Response.Redirect("~/Error/Error400");
+        }
+
+        try
+        {
+            var userId = int.Parse(Request["userId"]);
+            var friendId = int.Parse(Request["friendId"]);
+
+            if (userId == friendId)
+            {
+                Common.Log.Error($"Location: /User/AddToFriends Message: User cannot befriend himself/herself");
+                Response.Redirect("~/Error/Error400");
+            }
+
+            Common.UserLogic.AddFriendToUser(int.Parse(Request["userId"]),
+                                                    int.Parse(Request["friendId"]));
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Location: /User/AddToFriends Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+
+        Response.Redirect("~/User");
+    }
+    else
+    {
+        Common.Log.Error($"Location: /User/AddToFriends Message: NonPost method is not available for this location");
+        Response.Redirect("~/Error/Error400");
+    }
+}
