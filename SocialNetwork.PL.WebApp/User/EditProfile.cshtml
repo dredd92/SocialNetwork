@@ -49,7 +49,7 @@
                 Response.Redirect("~/Error/Error404");
             }
         }
-        catch
+        catch (Exception e)
         {
             Common.Log.Fatal($"Location: /User/EditProfile Message: {e.Message} {e.StackTrace}");
             Response.Redirect("~/Error/Error500");
