@@ -1,0 +1,12 @@
+﻿.dialogElement:hover{
+    cursor: pointer;
+}
+
+.dialog{
+  max-height: 500px;
+  overflow-y: scroll;
+}
+
+.sendForm{
+    width: 100%;
+}

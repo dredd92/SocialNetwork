@@ -1,18 +1,42 @@
-﻿using SocialNetwork.Bll.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using SocialNetwork.BllContracts;
+using SocialNetwork.DalContracts;
 using SocialNetwork.Entities;
 
 namespace SocialNetwork.Bll
 {
     public class AdminLogic : IAdminLogic
     {
-        public Admin GetAdminByUsername(string username)
+        private readonly IAdminDao dao;
+
+        public AdminLogic(IAdminDao dao)
         {
-            return DaoKeeper.AdminDao.GetAdminByUsername(username);
+            this.dao = dao;
+        }
+
+        public bool Add(Admin value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Admin Get(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Admin Get(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Remove(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Update(int id, Admin newValue)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,0 +1,70 @@
+﻿@using SocialNetwork.PL.WebApp;
+@using SocialNetwork.Entities;
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    if (User.IsInRole("admin"))
+    {
+        Common.Log.Error("Location: /User/SendMessage, Message: Admins don't have access to this location");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    Message newMessage = null;
+    User user = null;
+
+    try
+    {
+        user = Common.UserLogic.GetUserByName(User.Identity.Name);
+
+        if (user == null)
+        {
+            Common.Log.Error("Location: /User/SendMessage Message: User was deleted during the duration of a session");
+            Response.Redirect("~/Error/Error404");
+        }
+    }
+    catch (Exception e)
+    {
+        Common.Log.Fatal($"Location: /User/SendMessage Message: {e.Message} {e.StackTrace}");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    if (IsPost)
+    {
+        newMessage = new Message
+        {
+            SenderId = user.Id,
+            RecieverId = int.Parse(Request["receiverId"]),
+            DateSent = DateTime.Now,
+            Contents = Request["text"],
+        };
+
+        try
+        {
+            Common.MessageLogic.AddMessage(newMessage);
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Location: /User/SendMessage Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+
+        if (!IsAjax)
+        {
+            Common.Log.Error("Location: /User/SendMessage Message: AJAX requests not available for this location");
+            Response.Redirect("~/Error/Error400");
+        }
+        else
+        {
+            <li class="list-group-item">
+                <p>
+                    <img src="@user.Image" class="img-circle img-thumbnail img-responsive" width="40" height="40" />
+                    <label class="label label-info">@newMessage.DateSent.ToShortDateString()</label>
+                    @newMessage.Contents
+                </p>
+            </li>
+        }
+    }
+}

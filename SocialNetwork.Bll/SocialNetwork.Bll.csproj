@@ -46,25 +46,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdminLogic.cs" />
-    <Compile Include="DaoKeeper.cs" />
-    <Compile Include="FriendLogic.cs" />
     <Compile Include="MessageLogic.cs" />
     <Compile Include="UserLogic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UserMessagesLogic.cs" />
+    <Compile Include="UserMessageLogic.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SocialNetwork.Bll.Interfaces\SocialNetwork.Bll.Interfaces.csproj">
+    <ProjectReference Include="..\SocialNetwork.BllContracts\SocialNetwork.BllContracts.csproj">
       <Project>{AC5DDEF8-3D35-4B90-A183-7FB11BEB0A16}</Project>
-      <Name>SocialNetwork.Bll.Interfaces</Name>
+      <Name>SocialNetwork.BllContracts</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SocialNetwork.Dal.Interfaces\SocialNetwork.Dal.Interfaces.csproj">
+    <ProjectReference Include="..\SocialNetwork.DalContracts\SocialNetwork.DalContracts.csproj">
       <Project>{24B1F0E2-91D3-4559-BCC4-B4D9A905C588}</Project>
-      <Name>SocialNetwork.Dal.Interfaces</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SocialNetwork.Dal\SocialNetwork.Dal.Database.csproj">
-      <Project>{37A16023-2643-4CAF-B8C2-55CCE46F77B2}</Project>
-      <Name>SocialNetwork.Dal.Database</Name>
+      <Name>SocialNetwork.DalContracts</Name>
     </ProjectReference>
     <ProjectReference Include="..\SocialNetwork.Entities\SocialNetwork.Entities.csproj">
       <Project>{7E502F75-4D45-4CA7-A47C-9E2A187BC5C2}</Project>

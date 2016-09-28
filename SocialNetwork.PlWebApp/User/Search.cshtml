@@ -1,0 +1,96 @@
+﻿@using SocialNetwork.Entities
+@using SocialNetwork.PL.WebApp
+
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    Layout = "~/_Layouts/_DefaultLayout.cshtml";
+    Page.Title = "Search";
+}
+
+@{
+    if (IsPost)
+    {
+        Common.Log.Error("Location: /User/Search Message: Cannot use 'POST' to send a request for this location");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    if (!IsPost)
+    {
+        var searchData = new SearchData
+        {
+            Name = Request["name"],
+            AgeFrom = Request["ageFrom"].IsEmpty() ? null : int.Parse(Request["ageFrom"]) as int?,
+            AgeTo = Request["ageTo"].IsEmpty() ? null : int.Parse(Request["ageTo"]) as int?,
+            Hometown = Request["hometown"],
+            Sex = Request["sex"].IsEmpty() ? null : (Sex?)int.Parse(Request["sex"]),
+        };
+
+        IEnumerable<User> usersFound = null;
+
+        try
+        {
+            usersFound = Common.UserLogic.GetUserBySearchData(searchData);
+        }
+        catch (Exception e)
+        {
+            Common.Log.Fatal($"Site: /User/Search Message: {e.Message} {e.StackTrace}");
+            Response.Redirect("~/Error/Error500");
+        }
+
+        <div class="col-xs-8">
+            <form method="get" class="form-group" id="AnotherSearchForm">
+                <input type="text" id="AnotherSearchInput" class="form-control" name="name" placeholder="Enter a name to find" />
+                <button type="button" class="btn btn-link btn-block" data-toggle="collapse" data-target="#AdvancedSearch"><i class="glyphicon glyphicon-arrow-down"></i></button>
+                <div class="collapse" id="AdvancedSearch">
+                    <fieldset>
+                        <label class="label label-default">Hometown</label>
+                        <input type="text" class="form-control" name="hometown" placeholder="Enter a hometown's name" />
+                    </fieldset>
+                    <fieldset>
+                        <label class="label label-default">Sex</label>
+                        <select class="form-control" name="sex">
+                            <option name="sex" value=""></option>
+                            <option name="sex" value="0">Male</option>
+                            <option name="sex" value="1">Female</option>
+                        </select>
+                    </fieldset>
+                    <div class="row">
+                        <div class="col-xs-2">
+                            <label class="label label-default">From age</label>
+                            <input type="number" min="0" max="140" name="ageFrom" />
+                        </div>
+                        <div class="col-xs-2">
+                            <label class="label label-default">To age</label>
+                            <input type="number" min="0" max="140" name="ageTo" />
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-default pull-right">Search</button>
+            </form>
+            <h1>Users found:</h1>
+            @if (!usersFound.Any())
+            {
+                <p>Nobody was found</p>
+        }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var user in usersFound)
+        {
+                        <li class="list-group-item">
+                            <form method="get" action="~/User">
+                                <img class="img-responsive img-thumbnail img-rounded" src="@(user.Image ?? "/User/_Images/no_pic.png")" alt="User pic" width="80" height="80" />
+                                <button type="submit" class="btn btn-link text-capitalize">@user.FirstName @user.LastName</button>
+                                <input type="hidden" name="userId" value="@user.Id" />
+                            </form>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+}

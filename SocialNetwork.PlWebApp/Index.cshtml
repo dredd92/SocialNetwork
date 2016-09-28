@@ -1,0 +1,76 @@
+﻿@using SocialNetwork.PL.WebApp.Models;
+@using SocialNetwork.PL.WebApp;
+
+@{
+    bool isAbleToLogIn = false;
+    Validation.RequireField("username", "Username is required");
+    Validation.Add("username", Validator.Regex(@"^(?!\s*$).+", "Username cannot be empty"));
+    Validation.RequireField("password", "Password is required");
+
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("admin"))
+        {
+            Response.Redirect("~/Admin");
+        }
+
+        Response.Redirect("~/User");
+    }
+
+    if (IsPost)
+    {
+        if (Validation.IsValid())
+        {
+            var username = Request["username"];
+            var password = Request["password"];
+
+            try
+            {
+                isAbleToLogIn = Auth.CanLogIn(username, password);
+            }
+            catch (Exception e)
+            {
+                Common.Log.Fatal($"Site: Index, Message: {e.Message} {e.StackTrace}");
+                Response.Redirect("~/Error/Error500");
+            }
+
+            if (isAbleToLogIn)
+            {
+                FormsAuthentication.SetAuthCookie(username, false);
+                Response.Redirect("~/User");
+            }
+        }
+    }
+
+    Layout = "~/_Layouts/_DefaultLayout.cshtml";
+    Page.Title = "Welcome to Circles";
+}
+<div class="col-xs-5">
+    @if (IsPost)
+    {
+        if (!Validation.IsValid())
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary();
+            </div>
+        }
+        else if (!isAbleToLogIn)
+        {
+            <div class="alert alert-danger">
+                <p>Wrong username or password.Please, try again</p>
+            </div>
+        }
+    }
+
+    <form class="form-group" method="post">
+        <fieldset>
+            <label class="label label-default">Username</label>
+            <input class="form-control" name="username" type="text" />
+        </fieldset>
+        <fieldset>
+            <label class="label label-default">Password</label>
+            <input class="form-control" name="password" type="password" />
+        </fieldset>
+        <button class="btn pull-right" type="submit">Log in</button>
+    </form>
+</div>

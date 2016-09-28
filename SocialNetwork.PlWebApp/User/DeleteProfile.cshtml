@@ -1,0 +1,77 @@
+﻿@using SocialNetwork.PL.WebApp
+@using SocialNetwork.Entities
+@{
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    var isAdmin = User.IsInRole("admin");
+    User curUser = null;
+
+    if (IsPost)
+    {
+        if (!isAdmin)
+        {
+            try
+            {
+                Common.UserLogic.RemoveUser(curUser.Id);
+            }
+            catch (Exception e)
+            {
+                Common.Log.Fatal($"Location: /User/DeleteProfile Message: {e.Message} {e.StackTrace}");
+                Response.Redirect("~/Error/Error500");
+            }
+        }
+        else
+        {
+            if (!Request["userToRemove"].IsInt())
+            {
+                Common.Log.Error($"Location: /User/DeleteProfile Message: Wrong userToRemove Id format ({Request["userToRemove"]})");
+                Response.Redirect("~/Error/Error400");
+            }
+
+            try
+            {
+                Common.UserLogic.RemoveUser(int.Parse(Request["userToRemove"]));
+                Response.Redirect("~/Admin");
+            }
+            catch (Exception e)
+            {
+                Common.Log.Fatal($"Location: /User/DeleteProfile Message: {e.Message} {e.StackTrace}");
+                Response.Redirect("~/Error/Error500");
+            }
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Delete profile</title>
+        <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+    </head>
+    <body>
+        <div id="DeletionModal" class="modal fade" role="alertdialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Delete profile<button class="close" data-dismiss="modal">&times</button></h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete your profile?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post">
+                            <button type="submit" class="btn btn-danger">Yes</button>
+                            <button type="button" class="btn btn-success" data-dismiss="modal">No</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="~/scripts/jquery-1.9.1.min.js"></script>
+        <script src="~/scripts/bootstrap.min.js"></script>
+        <script src="~/scripts/profileDeletion.js"></script>
+    </body>
+</html>

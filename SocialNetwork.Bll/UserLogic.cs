@@ -1,60 +1,63 @@
-﻿using SocialNetwork.Bll.Interfaces;
-using SocialNetwork.Entities;
+﻿using System;
 using System.Collections.Generic;
-using System;
+using SocialNetwork.BllContracts;
+using SocialNetwork.DalContracts;
+using SocialNetwork.Entities;
 
 namespace SocialNetwork.Bll
 {
     public class UserLogic : IUserLogic
     {
-        public void AddFriendToUser(int userId, int friendId)
+        private readonly IUserDao dao;
+
+        public UserLogic(IUserDao dao)
         {
-            DaoKeeper.UserDao.AddFriendToUser(userId, friendId);
+            this.dao = dao;
         }
 
-        public void AddUser(User user)
+        public bool Add(User value)
         {
-            DaoKeeper.UserDao.AddUser(user);
+            throw new NotImplementedException();
         }
 
-        public IEnumerable<User> GetAllUsers()
+        public bool AddFriend(int userId, int friendId)
         {
-            return DaoKeeper.UserDao.GetAllUsers();
+            throw new NotImplementedException();
         }
 
-        public User GetUserById(int userId)
+        public User Get(int id)
         {
-            return DaoKeeper.UserDao.GetUserById(userId);
+            throw new NotImplementedException();
         }
 
-        public User GetUserByName(string username)
+        public IEnumerable<User> Get(SearchData data)
         {
-            return DaoKeeper.UserDao.GetUserByName(username);
+            throw new NotImplementedException();
         }
 
-        public IEnumerable<User> GetUserBySearchData(SearchData data)
+        public User Get(string username)
         {
-            return DaoKeeper.UserDao.GetUserBySearchData(data);
+            throw new NotImplementedException();
         }
 
-        public IEnumerable<User> GetUserFriends(User user)
+        public IEnumerable<User> GetAll()
         {
-            return DaoKeeper.UserDao.GetUserFriends(user.Id);
+            throw new NotImplementedException();
         }
 
-        public bool RemoveFriendFromUser(int userId, int friendId)
+        public bool Remove(int id)
         {
-            return DaoKeeper.UserDao.RemoveFriendFromUser(userId, friendId);
+            throw new NotImplementedException();
         }
 
-        public bool RemoveUser(int userId)
+        public bool RemoveFriend(int userId, int friendId)
         {
-            return DaoKeeper.UserDao.RemoveUser(userId);
+            throw new NotImplementedException();
         }
 
-        public bool UpdateUser(int oldUserId, User newUser)
+        public bool Update(int id, User newValue)
         {
-            return DaoKeeper.UserDao.UpdateUser(oldUserId, newUser);
+            throw new NotImplementedException();
         }
     }
 }

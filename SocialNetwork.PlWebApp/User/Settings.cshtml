@@ -1,0 +1,87 @@
+﻿@using SocialNetwork.PL.WebApp
+@using SocialNetwork.Entities
+@{
+    Layout = "~/_Layouts/_DefaultLayout.cshtml";
+    Page.Title = "Settings";
+    bool success = false;
+
+    if (!User.Identity.IsAuthenticated)
+    {
+        Response.Redirect("~");
+    }
+
+    if (User.IsInRole("admin"))
+    {
+        Common.Log.Error("Location: /User/Settings, Message: admins don't have access to this location");
+        Response.Redirect("~/Error/Error400");
+    }
+
+    Validation.RequireField("oldPassword", "Old password required");
+    Validation.RequireField("password", "Password required");
+    Validation.RequireField("repeatPassword", "Repeat your password");
+    Validation.Add("repeatPassword", Validator.EqualsTo("password", "Passwords must match"));
+
+    if (IsPost)
+    {
+        if (Validation.IsValid())
+        {
+            User user = null;
+            try
+            {
+                user = Common.UserLogic.GetUserByName(User.Identity.Name);
+
+                if (user == null)
+                {
+                    Common.Log.Error("Location: /User/Settings Message: User was deleted during the session");
+                    Response.Redirect("~/Error/Error404");
+                }
+            }
+            catch (Exception e)
+            {
+                Common.Log.Fatal($"Site: /User/Settings Message: {e.Message} {e.StackTrace}");
+                Response.Redirect("~/Error/Error500");
+            }
+
+            if (Crypto.VerifyHashedPassword(user.Password, Request["oldPassword"]))
+            {
+                success = true;
+                user.Password = Crypto.HashPassword(Request["password"]);
+                try
+                {
+                    Common.UserLogic.UpdateUser(user.Id, user);
+                }
+                catch (Exception e)
+                {
+                    Common.Log.Fatal($"Site: /User/Settings Message: {e.Message} {e.StackTrace}");
+                    Response.Redirect("~Error/Error500");
+                }
+            }
+        }
+    }
+}
+<div class="col-xs-5">
+    @if (IsPost)
+    {
+        <div class="alert alert-danger">
+            @if (!Validation.IsValid())
+            {
+            Html.ValidationSummary();
+            }
+            else if (!success)
+            {
+                <p>Wrong old password</p>
+            }
+        </div>
+    }
+    <form method="post">
+        <fieldset>
+            <label class="label label-default">Old password</label>
+            <input class="form-control" type="password" name="oldPassword" />
+            <label class="label label-default">New Password</label>
+            <input class="form-control" name="password" type="password" />
+            <label class="label label-default">Repeat password</label>
+            <input class="form-control" name="repeatPassword" type="password" />
+        </fieldset>
+        <button class="btn">Edit profile</button>
+    </form>
+</div>
